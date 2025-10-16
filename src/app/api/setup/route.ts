@@ -2,30 +2,7 @@ import { NextResponse } from 'next/server';
 import xrpl from 'xrpl';
 import { neon } from '@neondatabase/serverless';
 import { loadState } from '../common/utils';
-import { createFundedWallet, waitForAccountActivated, submitTx, sleep, setTrustLine } from '../common/utils';
-import { PocState } from '../common/utils';
-
-async function issueTokens(
-  client: xrpl.Client,
-  issuer: xrpl.Wallet,
-  destination: string,
-  currency: string,
-  value: string
-) {
-  const tx: xrpl.Payment = {
-    TransactionType: 'Payment',
-    Account: issuer.address,
-    Destination: destination,
-    Amount: {
-      currency,
-      issuer: issuer.address,
-      value
-    }
-  };
-  const prepared = await client.autofill(tx);
-  const signed = issuer.sign(prepared);
-  await client.submitAndWait(signed.tx_blob);
-}
+import { createFundedWallet, waitForAccountActivated, submitTx, sleep, setTrustLine, issueTokens } from '../common/utils';
 
 export async function GET() {
   console.log('=== INICIANDO SETUP XRPL POC ===');

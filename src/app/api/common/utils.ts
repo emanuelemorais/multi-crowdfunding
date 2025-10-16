@@ -132,3 +132,57 @@ export async function setTrustLine(
     Flags: xrpl.TrustSetFlags.tfSetfAuth
   });
 }
+
+export async function issueTokens(
+  client: xrpl.Client,
+  issuer: xrpl.Wallet,
+  destination: string,
+  currency: string,
+  value: string
+) {
+  const tx: xrpl.Payment = {
+    TransactionType: 'Payment',
+    Account: issuer.address,
+    Destination: destination,
+    Amount: {
+      currency,
+      issuer: issuer.address,
+      value
+    }
+  };
+  const prepared = await client.autofill(tx);
+  const signed = issuer.sign(prepared);
+  await client.submitAndWait(signed.tx_blob);
+}
+
+export async function checkAvailableBalance(
+  client: xrpl.Client, 
+  adminAddress: string, 
+  currency: string,
+  issuer: string,
+) {
+
+  const lines = await client.request({ command: "account_lines", account: adminAddress })
+
+  const tokenLine = lines.result.lines.find(l => l.currency === currency && l.account === issuer);
+  const originalTokenBalance = Number(tokenLine?.balance ?? 0);
+
+  const response = await client.request({
+      command: "gateway_balances",
+      account: adminAddress,
+      ledger_index: "validated",
+      strict: true,
+    });
+
+    const obligations = response.result.obligations;
+
+    if (!obligations || Object.keys(obligations).length === 0) {
+      console.log("Nenhum token emitido por esta conta.");
+      return originalTokenBalance;
+    }
+
+    const tokenBalance = Object.entries(obligations).find(o => o[0] === currency);
+
+    if (!tokenBalance) return 0;
+    return Number(originalTokenBalance - Number(tokenBalance[1]));
+}

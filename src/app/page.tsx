@@ -152,14 +152,23 @@ export default function Home() {
                   })()}
                 </div>
                 {profile && profile !== 'admin' && (
-                  <Link href="/offers" className="block">
+                  <div className="flex flex-col items-center gap-2">
+                    <Link href="/offers" className="block">
+                      <Button variant="outline" className="w-full">
+                        Ir para ofertas
+                      </Button>
+                    </Link>
+
+                    <Link href="/market" className="block">
                     <Button variant="outline" className="w-full">
-                      Ir para ofertas
+                      Ir para Mercado Primario
                     </Button>
-                  </Link>
+                    </Link>
+                  </div>
                 )}
               </div>
             )}
+
           </div>
 
           <div className="pt-4 border-t border-gray-200">

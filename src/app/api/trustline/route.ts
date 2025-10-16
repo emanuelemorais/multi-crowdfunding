@@ -16,11 +16,7 @@ export async function POST(req: Request) {
     if (!walletAddress || !currency || !issuer) {
       return NextResponse.json({ error: 'missing_parameters' }, { status: 400 });
     }
-
     // Look up wallet secret from DB if not provided
-
-    console.log('issuer', issuer);
-    console.log('walletAddress', walletAddress);
 
     const sql = neon(process.env.DATABASE_URL as string);
     const adminRows = await sql`select * from crowdfundings where address = ${issuer} limit 1` as any;

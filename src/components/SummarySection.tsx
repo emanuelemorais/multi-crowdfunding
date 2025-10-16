@@ -45,14 +45,23 @@ export function SummarySection({ summary, originalTokensTrustLines, wrappedToken
 
         <div className="text-center">
           <div className="flex flex-wrap gap-1 justify-center mb-2">
-            {wrappedTokensTrustLines.map((token, index) => (
+            {
+            wrappedTokensTrustLines.length > 0 ? (
+            wrappedTokensTrustLines.map((token, index) => (
               <span
                 key={index}
                 className="px-2 py-1 bg-orange-100 text-orange-800 text-xs rounded-full"
               >
                 {token.currency} Wrapped
               </span>
-            ))}
+              ) )
+            ) : (
+              <span
+                className="px-2 py-1 bg-orange-100 text-orange-800 text-xs rounded-full"
+              >
+                -
+              </span>
+            )}
           </div>
           <p className="text-sm text-gray-600">Tokens wrapped emitidos</p>
         </div>
