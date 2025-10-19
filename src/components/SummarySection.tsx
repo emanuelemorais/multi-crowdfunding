@@ -63,7 +63,7 @@ export function SummarySection({ summary, originalTokensTrustLines, wrappedToken
               </span>
             )}
           </div>
-          <p className="text-sm text-gray-600">Tokens wrapped emitidos</p>
+          <p className="text-sm text-gray-600">Tokens wrapped</p>
         </div>
       </div>
     </div>

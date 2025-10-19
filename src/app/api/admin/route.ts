@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import xrpl from 'xrpl';
 import { neon } from '@neondatabase/serverless';
+import { checkAvailableBalance } from '../common/utils';
 
 async function getTrustLinesForIssuer(
   client: xrpl.Client,
@@ -26,17 +27,26 @@ export async function GET(req: Request) {
   await client.connect();
 
   try {
-    const sql = neon(process.env.DATABASE_URL as string);
-    const adminWalletRows = await sql`select * from crowdfundings` as any;
-
-    const wrappedTokensRows = await sql`select * from wrapped_tokens where crowdfunding_id = ${adminWalletRows[0].id}` as any;
-    const wrappedTokens = wrappedTokensRows.map((row: any) => row.code);
-    
     const url = new URL(req.url);
     const walletAddress = url.searchParams.get('walletAddress');
     if (!walletAddress) {
       return NextResponse.json({ error: 'walletAddress parameter required' }, { status: 400 });
     }
+
+    const sql = neon(process.env.DATABASE_URL as string);
+    const adminWalletRow = await sql`select * from crowdfundings where address = ${walletAddress}` as any;
+    const adminWallet = adminWalletRow?.[0];
+    if (!adminWallet) {
+      return NextResponse.json({ error: 'admin_not_found' }, { status: 404 });
+    }
+
+    const adminWalletRows = await sql`select * from crowdfundings` as any;
+
+    const wrappedTokensRows = await sql`select * from wrapped_tokens where crowdfunding_id = ${adminWallet.id}` as any;
+    const wrappedTokens = wrappedTokensRows.map((row: any) => row.code);
+
+    const tokenPlatformRows = await sql`select * from crowdfunding_currencies where crowdfunding_id = ${adminWallet.id}` as any;
+    const tokenPlatform = tokenPlatformRows.map((row: any) => row.code);
     
     const trustLines = await getTrustLinesForIssuer(client, walletAddress);
 
@@ -44,8 +54,16 @@ export async function GET(req: Request) {
       adminWalletRows.some((wallet: any) => wallet.address === line.account && wrappedTokens.includes(line.currency))
     );
 
+    console.log('trustLines', trustLines);
+
+
+    for (const trustLine of wrappedTokensTrustLines) {
+      const availableBalance = await checkAvailableBalance(client, walletAddress, trustLine.currency, trustLine.account);
+      (trustLine as any).emitted = (Number(trustLine.balance) - Number(availableBalance)).toString();
+    }
+
     const originalTokensTrustLines = trustLines.filter(line => 
-      adminWalletRows.some((wallet: any) => wallet.address === line.account && !wrappedTokens.includes(line.currency))
+      adminWalletRows.some((wallet: any) => wallet.address === line.account && tokenPlatform.includes(line.currency))
     );
 
     const trustLinesInvestorsWallets = trustLines.filter(line => 
@@ -73,7 +91,7 @@ export async function GET(req: Request) {
 
    
     return NextResponse.json({
-      crowdfundingName: adminWalletRows[0].name,
+      crowdfundingName: adminWallet.name,
       issuer: walletAddress,
       summary: {
         totalTrustLinesInvestors: trustLinesInvestorsWallets.length,

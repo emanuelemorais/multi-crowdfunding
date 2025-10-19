@@ -104,7 +104,13 @@ export default function Home() {
             <div className="w-full">
               <Select
                 value={crowdfundingId && adminOptions.find(o => o.id === crowdfundingId) ? crowdfundingId : ''}
-                onValueChange={(v: string) => setCrowdfundingId(v)}
+                onValueChange={(v: string) => {
+                  setCrowdfundingId(v);
+                  const selectedAdmin = adminOptions.find(o => o.id === v);
+                  if (selectedAdmin) {
+                    setAdminAddress(selectedAdmin.adminAddress);
+                  }
+                }}
               >
                 <SelectTrigger className="w-full">
                   <SelectValue placeholder="Selecione uma plataforma de Crowdfunding" />
@@ -152,17 +158,16 @@ export default function Home() {
                   })()}
                 </div>
                 {profile && profile !== 'admin' && (
-                  <div className="flex flex-col items-center gap-2">
+                  <div className="flex items-center justify-center gap-4">
+                    <Link href="/market" className="block">
+                      <Button variant="outline" className="w-full">
+                        Ir para Mercado Primario
+                      </Button>
+                    </Link>
                     <Link href="/offers" className="block">
                       <Button variant="outline" className="w-full">
                         Ir para ofertas
                       </Button>
-                    </Link>
-
-                    <Link href="/market" className="block">
-                    <Button variant="outline" className="w-full">
-                      Ir para Mercado Primario
-                    </Button>
                     </Link>
                   </div>
                 )}

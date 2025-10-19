@@ -152,7 +152,12 @@ export async function issueTokens(
   };
   const prepared = await client.autofill(tx);
   const signed = issuer.sign(prepared);
-  await client.submitAndWait(signed.tx_blob);
+  const res = await client.submitAndWait(signed.tx_blob);
+  const txResult = (res.result as any)?.meta?.TransactionResult ?? (res.result as any)?.engine_result;
+  if (txResult !== "tesSUCCESS") {
+    throw new Error(`Failed to issue tokens: ${txResult}`);
+  }
+  return res;
 }
 
 export async function checkAvailableBalance(
@@ -177,12 +182,12 @@ export async function checkAvailableBalance(
     const obligations = response.result.obligations;
 
     if (!obligations || Object.keys(obligations).length === 0) {
-      console.log("Nenhum token emitido por esta conta.");
       return originalTokenBalance;
     }
 
     const tokenBalance = Object.entries(obligations).find(o => o[0] === currency);
 
-    if (!tokenBalance) return 0;
+    if (!tokenBalance) return originalTokenBalance;
+
     return Number(originalTokenBalance - Number(tokenBalance[1]));
 }

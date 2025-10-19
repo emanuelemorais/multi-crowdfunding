@@ -25,6 +25,7 @@ type Props = {
 
 export function InvestorsTable({ grouped, allTokens }: Props) {
   const entries = Object.entries(grouped);
+
   function TokenAddDialog({ wallet, tokens }: { wallet: string; tokens: TokenInfo[] }) {
     const [selected, setSelected] = useState<string>(tokens[0]?.label ?? "");
     const [submitting, setSubmitting] = useState(false);
@@ -96,6 +97,9 @@ export function InvestorsTable({ grouped, allTokens }: Props) {
           <TableBody>
             {entries.map(([wallet, details]) => {
               const missing = allTokens.filter(t => !details.currencies.includes(t.label));
+              console.log('details', details);
+              console.log('allTokens', allTokens);
+              console.log('missing', missing);
               return (
               <TableRow key={wallet} className="hover:bg-gray-50">
                 <TableCell className="text-center py-3 font-mono text-sm">{details.name || "—"}</TableCell>

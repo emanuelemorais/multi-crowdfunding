@@ -4,7 +4,7 @@ import Link from "next/link";
 import { ExternalLink } from "lucide-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
-type Line = { account: string; currency: string; balance: string; limit: string };
+type Line = { account: string; currency: string; balance: string; limit: string; emitted: string };
 
 type Props = {
   issuer: string;
@@ -21,7 +21,8 @@ export function WrappedTokensTable({ issuer, lines }: Props) {
             <TableRow>
               <TableHead className="text-center font-bold text-gray-600">Crowdfund Emissor</TableHead>
               <TableHead className="text-center font-bold text-gray-600">Code</TableHead>
-              <TableHead className="text-center font-bold text-gray-600">Quantidade</TableHead>
+              <TableHead className="text-center font-bold text-gray-600">Quantidade onHold</TableHead>
+              <TableHead className="text-center font-bold text-gray-600">Quantidade emitida</TableHead>
               <TableHead className="text-center font-bold text-gray-600">Ver Token Original do Crowdfund Emissor</TableHead>
               <TableHead className="text-center font-bold text-gray-600">Ver Wrapped Token</TableHead>
               <TableHead className="text-center font-bold text-gray-600"></TableHead>
@@ -35,6 +36,7 @@ export function WrappedTokensTable({ issuer, lines }: Props) {
                 </TableCell>
                 <TableCell className="text-center py-3">{line.currency}</TableCell>
                 <TableCell className="text-center py-3">{line.balance}</TableCell>
+                <TableCell className="text-center py-3">{line.emitted}</TableCell>
                 <TableCell className="text-center py-3">
                   <Link
                     href={`https://testnet.xrpl.org/token/${line.currency}.${line.account}`}

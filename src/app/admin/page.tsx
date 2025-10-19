@@ -111,7 +111,7 @@ export default function AdminPage() {
               wrappedTokensTrustLines={data.wrappedTokensTrustLines}
             />
 
-            <WrappedTokensTable issuer={data.issuer} lines={data.wrappedTokensTrustLines} />
+            <WrappedTokensTable issuer={data.issuer} lines={data.wrappedTokensTrustLines as any} />
 
             <InvestorsTable 
               grouped={groupByWallet(data.trustlineInvestorsByCurrency)} 

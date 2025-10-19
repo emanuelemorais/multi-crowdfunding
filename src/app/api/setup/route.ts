@@ -109,9 +109,9 @@ export async function GET() {
         if (admin.address !== otherAdmin.address) {
           console.log(`Admin ${idx + 1} recebendo tokens do Admin ${otherIdx + 1}`);
           for (const currency of codes[otherAdmin.address]) {
-            console.log(`Emitindo 5000 ${currency} do Admin ${otherIdx + 1} para Admin ${idx + 1}`);
-            await issueTokens(client, otherAdmin, admin.address, currency, '5000');
-            console.log(`5000 ${currency} emitidos com sucesso`);
+            console.log(`Emitindo 100 ${currency} do Admin ${otherIdx + 1} para Admin ${idx + 1}`);
+            await issueTokens(client, otherAdmin, admin.address, currency, '100');
+            console.log(`100 ${currency} emitidos com sucesso`);
             await sleep(200);
           }
         }
@@ -129,14 +129,9 @@ export async function GET() {
         console.log(`Valor base para investidor ${idx + 1}: ${base}`);
         
         for (const cur of codes[admin.address]) {
-          console.log(`Criando trustline para moeda ${cur} entre investidor ${idx + 1} e Admin ${adminIdx + 1}`);
+          console.log(`Criando trustline para token ${cur} entre investidor ${idx + 1} e Admin ${adminIdx + 1}`);
           await setTrustLine(client, investor, admin, cur, '1000000');
           console.log(`Trustline criada para ${cur}`);
-          await new Promise(r => setTimeout(r, 500));
-
-          console.log(`Emitindo ${base} ${cur} para investidor ${idx + 1}`);
-          await issueTokens(client, admin, investor.address, cur, String(base));
-          console.log(`${base} ${cur} emitidos com sucesso`);
           await new Promise(r => setTimeout(r, 500));
         }
         console.log(`Investidor ${idx + 1} do Admin ${adminIdx + 1} processado com sucesso`);
@@ -168,25 +163,28 @@ export async function GET() {
         adminIds[admin.address] = adminId;
         console.log(`Admin ${idx + 1} inserido com ID: ${adminId}`);
 
-        console.log(`Inserindo moedas do Admin ${idx + 1}...`);
+        console.log(`Inserindo tokens do Admin ${idx + 1}...`);
         for (const code of codes[admin.address]) {
-            console.log(`Inserindo moeda ${code} para Admin ${idx + 1}`);
-            const currencyInserted = await sql`INSERT INTO crowdfunding_currencies (code, crowdfunding_id) VALUES (${code}, ${adminId}) ON CONFLICT (code, crowdfunding_id) DO NOTHING RETURNING id`;
+            console.log(`Inserindo tokens ${code} para Admin ${idx + 1}`);
+            const currencyInserted = await sql`INSERT INTO crowdfunding_currencies (code, crowdfunding_id, maxquantity) VALUES (${code}, ${adminId}, 200) ON CONFLICT (code, crowdfunding_id) DO NOTHING RETURNING id`;
             let currencyId = (currencyInserted as any)[0]?.id as string;
-            
+
             // Se não retornou ID (por conflito), buscar o ID existente
             if (!currencyId) {
-                console.log(`Moeda ${code} já existe, buscando ID existente...`);
+                console.log(`Token ${code} já existe, buscando ID existente...`);
                 const existingCurrency = await sql`SELECT id FROM crowdfunding_currencies WHERE code = ${code} AND crowdfunding_id = ${adminId}`;
                 currencyId = (existingCurrency as any)[0]?.id as string;
             }
             
             currencyIds[`${admin.address}-${code}`] = currencyId;
-            console.log(`Moeda ${code} com ID: ${currencyId}`);
+            console.log(`Token ${code} com ID: ${currencyId}`);
         }
 
         console.log(`Inserindo investidores do Admin ${idx + 1}...`);
-        var investorId = idx + 1;
+        let investorId = idx;
+        if (idx === 0) {
+          investorId = idx + 1;
+        }
         for (const [invIdx, investor] of investors[admin.address].entries()) {
             console.log(`Inserindo investidor ${invIdx + 1} do Admin ${idx + 1}`);
             await sql`INSERT INTO crowdfunding_investors (name, address, secret, crowdfunding_id) VALUES (${`Investor-${investorId}`}, ${investor.address}, ${investor.seed ?? ''}, ${adminId})`;
@@ -197,64 +195,82 @@ export async function GET() {
     }
     console.log('Todos os dados inseridos no banco de dados');
 
-    console.log('Criando wrapped tokens baseados no saldo dos outros administradores...');
-    
-    // Para cada admin, criar wrapped tokens baseado no saldo conhecido (5000 tokens)
+    // Inserir wrapped tokens dos outros administradores
+    console.log('Inserindo wrapped tokens dos outros administradores...');
     for (const [idx, admin] of admins.entries()) {
-        console.log(`Processando wrapped tokens para Admin ${idx + 1} (${admin.address})`);
         const adminId = adminIds[admin.address];
+        console.log(`Processando wrapped tokens para Admin ${idx + 1} (${admin.address})`);
         
         for (const [otherIdx, otherAdmin] of admins.entries()) {
             if (admin.address !== otherAdmin.address) {
-                console.log(`Admin ${idx + 1} criando wrapped tokens baseados nos tokens do Admin ${otherIdx + 1}`);
+                console.log(`Admin ${idx + 1} registrando tokens do Admin ${otherIdx + 1}`);
                 for (const currency of codes[otherAdmin.address]) {
-                    console.log(`Processando moeda ${currency} do Admin ${otherIdx + 1}`);
-                    // Sabemos que cada admin tem 5000 tokens dos outros admins
-                    const balance = 5000;
-                    const wrappedAmount = Math.floor(balance * 0.5); // 50% do saldo como wrapped token (2500)
-                    console.log(`Saldo base: ${balance}, Wrapped amount: ${wrappedAmount}`);
-                    
-                    // Criar trustline para o wrapped token
-                    const wrappedCode = `${currency}`;
-                    console.log(`Código do wrapped token: ${wrappedCode}`);
-                    
-                    console.log(`Criando trustlines e emitindo wrapped tokens para investidores do Admin ${idx + 1}`);
-                    for (const [invIdx, investor] of investors[admin.address].entries()) {
-                        
-                        
-                        console.log(`Emitindo ${wrappedAmount} ${wrappedCode} para investidor ${invIdx + 1}`);
-                        // Emitir wrapped token para o investidor
-                        if (invIdx !== 0){ // O primeiro investidor não recebe wrapped token
-
-                          console.log(`Processando investidor ${invIdx + 1} (${investor.address})`);
-                          console.log(`Criando trustline para ${wrappedCode}`);
-                          await setTrustLine(client, investor, admin, wrappedCode, '1000000');
-                          console.log(`Trustline criada para ${wrappedCode}`);
-                          await sleep(200);
-
-                          await issueTokens(client, admin, investor.address, wrappedCode, String(wrappedAmount));
-                          console.log(`${wrappedAmount} ${wrappedCode} emitidos com sucesso`);
-                          await sleep(200);
-                        }
-                        
-                    }
-                    // Salvar wrapped token na tabela
-                    console.log(`Salvando wrapped token ${wrappedCode} no banco de dados`);
                     const originalCurrencyId = currencyIds[`${otherAdmin.address}-${currency}`];
-                    console.log(`ID da moeda original: ${originalCurrencyId}`);
-                    
-                    await sql`INSERT INTO wrapped_tokens (currency_id, code, crowdfunding_id) VALUES (${originalCurrencyId}, ${wrappedCode}, ${adminId})`;
-                    console.log(`Wrapped token ${wrappedCode} salvo no banco`);
-                    
-                    console.log(`✅ Criado wrapped token ${wrappedCode} para admin ${admin.address} baseado em ${balance} ${currency} de ${otherAdmin.address}`);
+                    console.log(`Inserindo wrapped token ${currency} do Admin ${otherIdx + 1} para Admin ${idx + 1}`);
+                    await sql`INSERT INTO wrapped_tokens (currency_id, code, crowdfunding_id) VALUES (${originalCurrencyId}, ${currency}, ${adminId})`;
+                    console.log(`Wrapped token ${currency} inserido com sucesso`);
                 }
             }
         }
-        console.log(`Wrapped tokens do Admin ${idx + 1} processados`);
     }
-    console.log('Todos os wrapped tokens criados com sucesso');
+    console.log('Todos os wrapped tokens inseridos no banco de dados');
 
+    console.log('Criando wrapped tokens baseados no saldo dos outros administradores...');
+    
+    // Para cada admin, criar wrapped tokens baseado no saldo conhecido (5000 tokens)
+    // for (const [idx, admin] of admins.entries()) {
+    //     console.log(`Processando wrapped tokens para Admin ${idx + 1} (${admin.address})`);
+    //     const adminId = adminIds[admin.address];
+        
+    //     for (const [otherIdx, otherAdmin] of admins.entries()) {
+    //         if (admin.address !== otherAdmin.address) {
+    //             console.log(`Admin ${idx + 1} criando wrapped tokens baseados nos tokens do Admin ${otherIdx + 1}`);
+    //             for (const currency of codes[otherAdmin.address]) {
+    //                 console.log(`Processando moeda ${currency} do Admin ${otherIdx + 1}`);
+    //                 // Sabemos que cada admin tem 5000 tokens dos outros admins
+    //                 const balance = 5000;
+    //                 const wrappedAmount = Math.floor(balance * 0.5); // 50% do saldo como wrapped token (2500)
+    //                 console.log(`Saldo base: ${balance}, Wrapped amount: ${wrappedAmount}`);
+                    
+    //                 // Criar trustline para o wrapped token
+    //                 const wrappedCode = `${currency}`;
+    //                 console.log(`Código do wrapped token: ${wrappedCode}`);
+                    
+    //                 console.log(`Criando trustlines e emitindo wrapped tokens para investidores do Admin ${idx + 1}`);
+    //                 for (const [invIdx, investor] of investors[admin.address].entries()) {
+                        
+                        
+    //                     console.log(`Emitindo ${wrappedAmount} ${wrappedCode} para investidor ${invIdx + 1}`);
+    //                     // Emitir wrapped token para o investidor
+    //                     if (invIdx !== 0){ // O primeiro investidor não recebe wrapped token
 
+    //                       console.log(`Processando investidor ${invIdx + 1} (${investor.address})`);
+    //                       console.log(`Criando trustline para ${wrappedCode}`);
+    //                       await setTrustLine(client, investor, admin, wrappedCode, '1000000');
+    //                       console.log(`Trustline criada para ${wrappedCode}`);
+    //                       await sleep(200);
+
+    //                       await issueTokens(client, admin, investor.address, wrappedCode, String(wrappedAmount));
+    //                       console.log(`${wrappedAmount} ${wrappedCode} emitidos com sucesso`);
+    //                       await sleep(200);
+    //                     }
+                        
+    //                 }
+    //                 // Salvar wrapped token na tabela
+    //                 console.log(`Salvando wrapped token ${wrappedCode} no banco de dados`);
+    //                 const originalCurrencyId = currencyIds[`${otherAdmin.address}-${currency}`];
+    //                 console.log(`ID da moeda original: ${originalCurrencyId}`);
+                    
+    //                 await sql`INSERT INTO wrapped_tokens (currency_id, code, crowdfunding_id) VALUES (${originalCurrencyId}, ${wrappedCode}, ${adminId})`;
+    //                 console.log(`Wrapped token ${wrappedCode} salvo no banco`);
+                    
+    //                 console.log(`✅ Criado wrapped token ${wrappedCode} para admin ${admin.address} baseado em ${balance} ${currency} de ${otherAdmin.address}`);
+    //             }
+    //         }
+    //     }
+    //     console.log(`Wrapped tokens do Admin ${idx + 1} processados`);
+    // }
+    // console.log('Todos os wrapped tokens criados com sucesso');
 
     console.log('Carregando estado final...');
     const newState = await loadState();

@@ -63,18 +63,9 @@ export default function PocPage() {
           
           <div className="space-y-4">
             <p className="text-gray-600">
-              Esta funcionalidade irá criar e configurar automaticamente um sistema multi-crowdfunding:
+              Esta funcionalidade irá criar e configurar automaticamente um sistema multi-crowdfunding
             </p>
             
-            <ul className="list-disc list-inside space-y-2 text-sm text-gray-600">
-              <li>3 administradores de crowdfunding financiados</li>
-              <li>3 investidores por administrador (9 total)</li>
-              <li>Configuração de AccountSet (DefaultRipple + RequireAuth)</li>
-              <li>Trust lines entre administradores para todos os tokens</li>
-              <li>Trust lines configuradas entre investidores e administradores</li>
-              <li>Distribuição de tokens personalizados (TKA, TKB, TKC, TKD, TKE, TKF)</li>
-              <li>Salvamento no banco de dados (crowdfundings, currencies, investors)</li>
-            </ul>
 
             {state && (
               <div className="bg-green-50 border border-green-200 rounded-lg p-4">
@@ -125,25 +116,11 @@ export default function PocPage() {
                 ) : state ? (
                   'POC já inicializado'
                 ) : (
-                  'Inicializar POC (3 admins + 9 investidores)'
+                  'Inicializar POC'
                 )}
               </Button>
             </div>
 
-            {state && (
-              <div className="pt-4 space-y-2">
-                <Link href="/admin">
-                  <Button variant="outline" className="w-full">
-                    Ir para Painel Admin
-                  </Button>
-                </Link>
-                <Link href="/">
-                  <Button variant="outline" className="w-full">
-                    Voltar para Seleção de Perfil
-                  </Button>
-                </Link>
-              </div>
-            )}
           </div>
         </div>
       </div>

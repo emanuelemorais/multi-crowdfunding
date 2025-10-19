@@ -12,7 +12,7 @@ export async function POST(req: Request) {
     if (!buyerAddress || !quantity || !currency || !originalIssuer || !crowdfundingAdminWallet) {
         return NextResponse.json({ error: 'missing_parameters' }, { status: 400 });
     }
-
+    
     const client = new xrpl.Client('wss://s.altnet.rippletest.net:51233');
     await client.connect();
 
@@ -46,7 +46,11 @@ export async function POST(req: Request) {
 
     const amountXrp = pricePerToken * quantity;
 
-    console.log('amountXrp', amountXrp);
+    const lines = await client.request({ command: "account_lines", account: buyerWallet.address })
+    const line = lines.result.lines.find(l => l.currency === currency && l.account === issuerWallet.address);
+    if (!line) {
+        return NextResponse.json({ error: 'trustline_not_found' }, { status: 404 });
+    }
 
     try {
         const payment: xrpl.Payment = {
@@ -61,16 +65,10 @@ export async function POST(req: Request) {
         const signed = buyerWallet.sign(txToSubmit);
         const res = await client.submitAndWait(signed.tx_blob);
         const txResult = (res.result as any)?.meta?.TransactionResult ?? (res.result as any)?.engine_result;
-        console.log('txResult', txResult, res.result);
-
 
         if (txResult === "tesSUCCESS") {
 
-            await setTrustLine(client, buyerWallet, issuerWallet, currency, '1000000');
-            console.log(`Trustline criada para ${currency}`);
-            await sleep(200);
-
-            await issueTokens(client, issuerWallet, buyerWallet.address, currency, String(quantity));
+            const res = await issueTokens(client, issuerWallet, buyerWallet.address, currency, String(quantity));
             console.log(`${quantity} ${currency} emitidos com sucesso para ${buyerWallet.address}`);
 
             await sql`INSERT INTO wrapped_tokens (currency_id, code, crowdfunding_id) VALUES (${currencyId}, ${currency}, ${admin.id}) ON CONFLICT (currency_id, code, crowdfunding_id) DO NOTHING`;

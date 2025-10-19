@@ -4,12 +4,8 @@ import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ClipLoader } from "react-spinners";
-import Link from "next/link";
 import { Input } from "@/components/ui/input";
-import { 
-  LogOut,
-  ArrowUpDown,
-  } from 'lucide-react';
+import { ArrowUpDown } from 'lucide-react';
 import { toast } from "sonner";
 import {
   Sheet,
@@ -20,6 +16,7 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet"
 import { OffersTable } from "@/components/OffersTable";
+import { InvestorsHeader } from "@/components/InvestorHeader";
 
 
 type State = {
@@ -241,45 +238,16 @@ export default function OffersPage() {
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="p-6 space-y-4 max-w-7xl mx-auto">
-        <div className="flex items-center justify-between gap-2">
-          <h1 className="text-2xl font-bold">Painel de Ofertas</h1>
-          <div className="text-sm text-gray-600 gap-2 flex gap-4">
-            <p>Perfil: {profile === 'admin' ? 'Admin' : (state?.investors.find(i => i.address === profile)?.name || '—')}</p>
-            <p>Carteira: {profile === 'admin' ? state?.admin[0]?.address : state?.investors.find(i => i.address === profile)?.address}</p>
-          </div>
-
-          <div className="bg-white rounded-lg shadow-sm border py-0.5 px-0.5">
-          <div className="flex items-center gap-2">
-            <div className="flex items-center gap-1">
-              <label className="text-sm font-medium text-gray-700 pl-0.5 font-semibold">Token:</label>
-              <Select value={selectedToken} onValueChange={setSelectedToken}>
-                <SelectTrigger className="w-20 !h-8">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {tokenOptions.map((option) => (
-                    <SelectItem key={option.value} value={option.value}>
-                      {option.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="flex items-center gap-1">
-              <label className="text-sm font-medium text-gray-700 font-semibold">Saldo:</label>
-              <div className="w-36 bg-gray-50 !h-8 flex items-center justify-center border rounded-md">
-                {balanceLoading ? <ClipLoader color="#666" size={16} /> : `${Number(balance) % 1 === 0 ? Number(balance).toString() : Number(balance).toFixed(4)} ${selectedToken}`}
-              </div>
-            </div>
-          </div>
-        </div>
-          
-          <div className="space-x-2">
-            <Link href="/">
-              <Button variant="outline" className="flex items-center gap-2">Trocar perfil <LogOut className="w-4 h-4" /></Button>
-            </Link>
-          </div>
-        </div>
+        <InvestorsHeader
+          title="Painel de Ofertas"
+          profile={profile}
+          state={state}
+          selectedToken={selectedToken}
+          onTokenChange={setSelectedToken}
+          tokenOptions={tokenOptions}
+          balance={balance}
+          balanceLoading={balanceLoading}
+        />
 
         {/* Balance Section */}
         
