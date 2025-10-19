@@ -49,6 +49,11 @@ export async function loadState(): Promise<PocState | null> {
   const currencies = await sql`select * from crowdfunding_currencies` as any;
   const wrappedTokens = await sql`select * from wrapped_tokens` as any;
 
+  console.log('admins', admins);
+  console.log('investors', investors);
+  console.log('currencies', currencies);
+  console.log('wrappedTokens', wrappedTokens);  
+
   if (!investors || investors.length === 0) return null;
   if (!currencies || currencies.length === 0) return null;
 
